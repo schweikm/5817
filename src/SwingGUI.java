@@ -6,11 +6,12 @@ import java.io.FileReader;
 import java.io.IOException;
 
 public class SwingGUI {
+/*
 	public static void main(String[] args) {
 		writeStringToFile("A quick brown fox jumped over the lazy dog");
 		readStringFromFile();
 	}
-	
+*/
 	public static void writeStringToFile(String str) {
 		try {
 			// The encodeBase64 method take a byte[] as the parameter. The byte[] 
