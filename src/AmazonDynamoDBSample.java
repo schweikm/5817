@@ -12,9 +12,14 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
+import java.io.IOException;
+
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.PropertiesCredentials;
+import com.amazonaws.services.dynamodb.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodb.model.ComparisonOperator;
 
 
@@ -25,6 +30,22 @@ import com.amazonaws.services.dynamodb.model.ComparisonOperator;
 public class AmazonDynamoDBSample {
 
 
+	
+/*	
+    try {
+        final AWSCredentials credentials =
+          new PropertiesCredentials(
+            DynamoTable.class.getResourceAsStream("AwsCredentials.properties"));
+
+         myDynamoDB = new AmazonDynamoDBClient(credentials);
+    }
+    catch(final IOException ioex) {
+        System.err.println("Caught exception while creating DynamoDBClient!");
+        System.err.println("Message:  " + ioex.getMessage());
+        ioex.printStackTrace();
+    }
+*/	
+	
 
     public static void main(String[] args) throws Exception {
         
@@ -51,12 +72,12 @@ public class AmazonDynamoDBSample {
                                                     1980,
                                                     "*****",
                                                     "Billy Bob");
-*/
+
             // scan the table
             DynamoDBInterface.getInstance().scanTableYear(tableName,
                                                           ComparisonOperator.GT.toString(),
                                                           1900);
-
+*/
             System.out.println("Done!");
         } catch (AmazonServiceException ase) {
             System.out.println("Caught an AmazonServiceException, which means your request made it "
