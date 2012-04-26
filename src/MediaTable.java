@@ -1,4 +1,6 @@
 import java.io.IOException;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,9 +36,13 @@ public class MediaTable extends DynamoTable {
 
 
     public void addItemToTable(final MediaTableData data) {
-        final Map<String, AttributeValue> item = newItem(movieName, year, rating, fan);
-        final PutItemRequest putItemRequest = new PutItemRequest(tableName, item);
-        final PutItemResult putItemResult = myDynamoDB.putItem(putItemRequest);
+        final Map<String, AttributeValue> item = newItem(data.name,
+                                                         data.year,
+                                                         data.rating,
+                                                         data.fan);
+
+        final PutItemRequest putItemRequest = new PutItemRequest(getTableName(), item);
+        final PutItemResult putItemResult = getDynamoDBClient().putItem(putItemRequest);
         System.out.println("\nItem: " + putItemResult);
     }
 
@@ -47,31 +53,57 @@ public class MediaTable extends DynamoTable {
      * @param operator
      * @param year
      */
-    public void scanTableYear(final String operator,
-                              final int year) {
+    public List<MediaTableData> scanTable(final String operator,
+                                          final String attribute,
+                                          final Object valueObj) {
 
+        // to be generic, let's find the type of the attribute
+        AttributeValue value = null;
+        if(valueObj instanceof String) {
+            value = new AttributeValue().withS(valueObj.toString());
+        }
+        else if(valueObj instanceof Integer) {
+            int val = ((Number)valueObj).intValue();
+            value = new AttributeValue().withN(new Integer(val).toString());
+        }
+        else {
+            System.err.println("Unable to complete scan request for  attribute:  " +
+                               attribute + "  value" + valueObj.toString());
+            return null;
+        }
+
+        // then do the scan request
         final HashMap<String, Condition> scanFilter = new HashMap<String, Condition>();
         final Condition condition = new Condition()
             .withComparisonOperator(operator)
-            .withAttributeValueList(new AttributeValue().withN(new Integer(year).toString()));
-        scanFilter.put(yearAttribute, condition);
+            .withAttributeValueList(value);
+        scanFilter.put(attribute, condition);
         final ScanRequest scanRequest = new ScanRequest(getTableName()).withScanFilter(scanFilter);
         final ScanResult scanResult = getDynamoDBClient().scan(scanRequest);
 
+        // parse the result and transform it to a List of MediaTableData
         final List<Map<String,AttributeValue>> itemList = scanResult.getItems();
+
+        // if no items matched the filter return null
+        if(0 == scanResult.getCount()) {
+            return null;
+        }
+
+        // otherwise create a list and return it
+        final List<MediaTableData> returnList = new ArrayList<MediaTableData>(); 
         for(int i = 0; i < itemList.size(); i++) {
             final String resultName   = itemList.get(i).get(nameAttribute_PK).getS();
             final int    resultYear   = Integer.parseInt(itemList.get(i).get(yearAttribute).getN());
             final String resultRating = itemList.get(i).get(ratingAttribute).getS();
             final String resultFan    = itemList.get(i).get(fanAttribute).getS();
 
-            System.out.println("\n----------------------------------------\n" +
-                               "    Name  :  " + resultName   + "\n" +
-                               "    Year  :  " + resultYear   + "\n" +
-                               "    Rating:  " + resultRating + "\n" +
-                               "    Fan   :  " + resultFan    + "\n" +
-                               "----------------------------------------\n");
+            returnList.add(new MediaTableData(resultName,
+                                              resultYear,
+                                              resultRating,
+                                              resultFan));
         }
+
+        return returnList;
     }
 
 
@@ -94,7 +126,7 @@ public class MediaTable extends DynamoTable {
      * @return
      */
     private final Map<String, AttributeValue> newItem(final String name,
-                                                      final int year,
+                                                      final int    year,
                                                       final String rating,
                                                       final String fan) {
 
@@ -114,8 +146,8 @@ public class MediaTable extends DynamoTable {
 
 
     // table attributes
-    private static final String nameAttribute_PK = "name";
-    private static final String yearAttribute = "year";
-    private static final String ratingAttribute = "rating";
-    private static final String fanAttribute = "fan";
+    public static final String nameAttribute_PK = "name";
+    public static final String yearAttribute    = "year";
+    public static final String ratingAttribute  = "rating";
+    public static final String fanAttribute     = "fan";
 }

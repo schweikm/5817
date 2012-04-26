@@ -57,7 +57,7 @@ public abstract class DynamoTable {
 
         System.out.println("\nCreated Table: " + createdTableDescription);
 
-        // then wait for the table to become ACTIVE
+        // we have to wait for the table to be usable
         waitForTableToBecomeAvailable();
     }
 
@@ -77,18 +77,18 @@ public abstract class DynamoTable {
     }
 
 
-    /////////////////////////
-    // PROTECTED INTERFACE //
-    /////////////////////////
-
-
     /**
      * 
      * @return
      */
-    protected final String getTableName() {
+    public final String getTableName() {
         return myTableName;
     }
+
+
+    /////////////////////////
+    // PROTECTED INTERFACE //
+    /////////////////////////
 
 
     /**

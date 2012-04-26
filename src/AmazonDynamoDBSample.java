@@ -14,12 +14,11 @@
  */
 import java.io.IOException;
 
+import java.util.List;
+
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.PropertiesCredentials;
-import com.amazonaws.services.dynamodb.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodb.model.ComparisonOperator;
 
 
@@ -30,56 +29,36 @@ import com.amazonaws.services.dynamodb.model.ComparisonOperator;
 public class AmazonDynamoDBSample {
 
 
-	
-/*	
-    try {
-        final AWSCredentials credentials =
-          new PropertiesCredentials(
-            DynamoTable.class.getResourceAsStream("AwsCredentials.properties"));
-
-         myDynamoDB = new AmazonDynamoDBClient(credentials);
-    }
-    catch(final IOException ioex) {
-        System.err.println("Caught exception while creating DynamoDBClient!");
-        System.err.println("Message:  " + ioex.getMessage());
-        ioex.printStackTrace();
-    }
-*/	
-	
-
-    public static void main(String[] args) throws Exception {
-        
-
+    public static void main(String[] args) {
         try {
-            final String tableName = "my-favorite-movies-table";
+            // create a table manager
+            MediaTable table = new MediaTable("my-favorite-movies-table");
 
             // create the table
-//            DynamoDBInterface.getInstance().createTable(tableName);
+            table.createTable(MediaTable.nameAttribute_PK, "S");
 
             // describe the table
-//            DynamoDBInterface.getInstance().describeTable(tableName);
+            table.describeTable();
 
             // add an item
-/*            DynamoDBInterface.getInstance().addItem(tableName,
-                                                    "Bill & Ted's Excellent Adventure",
+            table.addItemToTable(new MediaTableData("Bill & Ted's Excellent Adventure",
                                                     1989,
                                                     "****",
-                                                    "James");
+                                                    "James"));
 
             // add another item
-            DynamoDBInterface.getInstance().addItem(tableName,
-                                                    "Airplane",
+            table.addItemToTable(new MediaTableData("Airplane",
                                                     1980,
                                                     "*****",
-                                                    "Billy Bob");
+                                                    "Billy Bob"));
 
             // scan the table
-            DynamoDBInterface.getInstance().scanTableYear(tableName,
-                                                          ComparisonOperator.GT.toString(),
-                                                          1900);
-*/
+            printDataItem(table.scanTable(ComparisonOperator.EQ.toString(),
+                                          MediaTable.fanAttribute,
+                                          "James"));
+
             System.out.println("Done!");
-        } catch (AmazonServiceException ase) {
+        } catch(final AmazonServiceException ase) {
             System.out.println("Caught an AmazonServiceException, which means your request made it "
                     + "to AWS, but was rejected with an error response for some reason.");
             System.out.println("Error Message:    " + ase.getMessage());
@@ -87,11 +66,35 @@ public class AmazonDynamoDBSample {
             System.out.println("AWS Error Code:   " + ase.getErrorCode());
             System.out.println("Error Type:       " + ase.getErrorType());
             System.out.println("Request ID:       " + ase.getRequestId());
-        } catch (AmazonClientException ace) {
+        } catch(final AmazonClientException ace) {
             System.out.println("Caught an AmazonClientException, which means the client encountered "
                     + "a serious internal problem while trying to communicate with AWS, "
                     + "such as not being able to access the network.");
             System.out.println("Error Message: " + ace.getMessage());
+        }
+        catch(final IOException ioex) {
+            System.err.println("Caught exception while creating DynamoDBClient!");
+            System.err.println("Message:  " + ioex.getMessage());
+            ioex.printStackTrace();
+        }
+    }
+
+    public static void printDataItem(final List<MediaTableData> items) {
+        if(null == items) {
+            System.out.println("No results returned!");
+            return;
+        }
+
+        for(int i = 0; i < items.size(); i++) {
+            final MediaTableData data = items.get(i);
+
+            System.out.println("\nItem " + (i + 1) + " of " + items.size());
+            System.out.println("----------------------------------------\n" +
+                               "    Name  :  " + data.name   + "\n" +
+                               "    Year  :  " + data.year   + "\n" +
+                               "    Rating:  " + data.rating + "\n" +
+                               "    Fan   :  " + data.fan    + "\n" +
+                               "----------------------------------------\n");
         }
     }
 }
