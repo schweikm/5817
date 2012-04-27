@@ -198,13 +198,17 @@ public abstract class DynamoTable {
         while (System.currentTimeMillis() < endTime) {
             try {Thread.sleep(1000 * 20);} catch (Exception e) {}
             try {
-                final DescribeTableRequest request = new DescribeTableRequest().withTableName(myTableName);
-                final TableDescription tableDescription = myDynamoDB.describeTable(request).getTable();
+                final DescribeTableRequest request =
+                  new DescribeTableRequest().withTableName(myTableName);
+                final TableDescription tableDescription =
+                  myDynamoDB.describeTable(request).getTable();
                 final String tableStatus = tableDescription.getTableStatus();
                 System.out.println("  - current state: " + tableStatus);
                 if (tableStatus.equals(TableStatus.ACTIVE.toString())) return;
             } catch (final AmazonServiceException ase) {
-                if (ase.getErrorCode().equalsIgnoreCase("ResourceNotFoundException") == false) throw ase;
+                if (ase.getErrorCode().equalsIgnoreCase("ResourceNotFoundException") == false) {
+                    throw ase;
+                }
             }
         }
         throw new RuntimeException("\nTable " + myTableName + " never went active");

@@ -18,6 +18,13 @@ import com.amazonaws.services.dynamodb.model.PutItemResult;
 public class MediaTable extends DynamoTable {
 
 
+    // table attributes
+    public static final String nameAttribute_PK = "name";
+    public static final String yearAttribute    = "year";
+    public static final String ratingAttribute  = "rating";
+    public static final String fanAttribute     = "fan";
+
+
     //////////////////////
     // PUBLIC INTERFACE //
     //////////////////////
@@ -32,6 +39,10 @@ public class MediaTable extends DynamoTable {
     }
 
 
+    /**
+     * 
+     * @param data
+     */
     public void addItemToTable(final MediaTableData data) {
         final Map<String, AttributeValue> item = newItem(data.name,
                                                          data.year,
@@ -118,9 +129,4 @@ public class MediaTable extends DynamoTable {
     /////////////////////
 
 
-    // table attributes
-    public static final String nameAttribute_PK = "name";
-    public static final String yearAttribute    = "year";
-    public static final String ratingAttribute  = "rating";
-    public static final String fanAttribute     = "fan";
 }

@@ -1,19 +1,10 @@
-/*
- * Copyright 2012 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License").
- * You may not use this file except in compliance with the License.
- * A copy of the License is located at
- *
- *  http://aws.amazon.com/apache2.0
- *
- * or in the "license" file accompanying this file. This file is distributed
- * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- * express or implied. See the License for the specific language governing
- * permissions and limitations under the License.
- */
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.amazonaws.AmazonClientException;
@@ -30,6 +21,14 @@ public class AmazonDynamoDBSample {
 
 
     public static void main(String[] args) {
+        List<List<String>> data = loadData();
+        printLoadedData(data);
+
+//        MediaTableDemo();
+    }
+
+    
+    public static void MediaTableDemo() {
         try {
             // create a table manager
             MediaTable table = new MediaTable("my-favorite-movies-table");
@@ -73,11 +72,63 @@ public class AmazonDynamoDBSample {
             System.out.println("Error Message: " + ace.getMessage());
         }
         catch(final IOException ioex) {
-            System.err.println("Caught exception while creating DynamoDBClient!");
+            System.err.println("MediaTableDemo:  Caught IOException!");
             System.err.println("Message:  " + ioex.getMessage());
             ioex.printStackTrace();
         }
     }
+
+
+    public static List<List<String>> loadData() {
+        final List<List<String>> returnList = new ArrayList<List<String>>();
+
+        try {
+            // find all of the folders in the data directory
+            final File data = new File("data");
+            final String[] children = data.list();
+
+            // then parse the info
+            for(final String child : children) {
+                if(child.startsWith(".svn")) {
+                    continue;
+                }
+
+                final File movieInfo = new File("data/" + child + "/info.txt");
+                final BufferedReader reader = new BufferedReader(
+                                            new FileReader(movieInfo));
+            
+                final String title = reader.readLine();
+                final String rating = reader.readLine();
+                final String year = reader.readLine();
+                final String runTimeMins = reader.readLine();
+                final String director = reader.readLine();
+                final String imdbRating = reader.readLine();
+
+                final List<String> info = new ArrayList<String>();
+                info.add(title.substring(8));
+                info.add(rating.substring(9));
+                info.add(year.substring(7));
+                info.add(runTimeMins.substring(17));
+                info.add(director.substring(11));
+                info.add(imdbRating.substring(14));
+
+                returnList.add(info);
+            }
+        }
+        catch(final FileNotFoundException fnfex) {
+            System.err.println("loadData:  Caught FileNotFoundException!");
+            System.err.println(fnfex.getMessage());
+            fnfex.printStackTrace();
+        }
+        catch(final IOException ioex) {
+            System.err.println("loadData:  Caught IOException!");
+            System.err.println(ioex.getMessage());
+            ioex.printStackTrace();
+        }
+
+        return returnList;
+    }
+
 
     public static void printDataItem(final List<MediaTableData> items) {
         if(null == items) {
@@ -94,6 +145,28 @@ public class AmazonDynamoDBSample {
                                "    Year  :  " + data.year   + "\n" +
                                "    Rating:  " + data.rating + "\n" +
                                "    Fan   :  " + data.fan    + "\n" +
+                               "----------------------------------------\n");
+        }
+    }
+
+
+    public static void printLoadedData(final List<List<String>> data) {
+        if(null == data) {
+            System.out.println("No data was loaded!");
+            return;
+        }
+
+        for(int i = 0; i < data.size(); i++) {
+            final List<String> datum = data.get(i);
+
+            System.out.println("\nItem " + (i + 1) + " of " + data.size());
+            System.out.println("----------------------------------------\n" +
+                               "    Title        :  " + datum.get(0) + "\n" +
+                               "    Rating       :  " + datum.get(1) + "\n" +
+                               "    Year         :  " + datum.get(2) + "\n" +
+                               "    Runtime (min):  " + datum.get(3) + "\n" +
+                               "    Director     :  " + datum.get(4) + "\n" +
+                               "    IMDB Rating  :  " + datum.get(5) + "\n" +
                                "----------------------------------------\n");
         }
     }
