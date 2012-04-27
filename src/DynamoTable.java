@@ -1,14 +1,21 @@
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.dynamodb.AmazonDynamoDBClient;
+import com.amazonaws.services.dynamodb.model.AttributeValue;
+import com.amazonaws.services.dynamodb.model.Condition;
 import com.amazonaws.services.dynamodb.model.CreateTableRequest;
 import com.amazonaws.services.dynamodb.model.DescribeTableRequest;
 import com.amazonaws.services.dynamodb.model.KeySchema;
 import com.amazonaws.services.dynamodb.model.KeySchemaElement;
 import com.amazonaws.services.dynamodb.model.ProvisionedThroughput;
+import com.amazonaws.services.dynamodb.model.ScanRequest;
+import com.amazonaws.services.dynamodb.model.ScanResult;
 import com.amazonaws.services.dynamodb.model.TableDescription;
 import com.amazonaws.services.dynamodb.model.TableStatus;
 
@@ -97,6 +104,54 @@ public abstract class DynamoTable {
      */
     protected final AmazonDynamoDBClient getDynamoDBClient() {
         return myDynamoDB;
+    }
+
+
+    /**
+     * 
+     * @param operator
+     * @param attribute
+     * @param valueObj
+     * @return
+     */
+    protected final List<Map<String,AttributeValue>>
+      getRawScanResult(final String operator,
+                       final String attribute,
+                       final Object valueObj) {
+
+        // to be generic, let's find the type of the attribute
+        AttributeValue value = null;
+        if(valueObj instanceof String) {
+            value = new AttributeValue().withS(valueObj.toString());
+        }
+        else if(valueObj instanceof Integer) {
+            int val = ((Number)valueObj).intValue();
+            value = new AttributeValue().withN(new Integer(val).toString());
+        }
+        else {
+            System.err.println("Unable to complete scan request for  attribute:  " +
+                               attribute + "  value" + valueObj.toString());
+            return null;
+        }
+
+        // then do the scan request
+        final HashMap<String, Condition> scanFilter = new HashMap<String, Condition>();
+        final Condition condition = new Condition()
+            .withComparisonOperator(operator)
+            .withAttributeValueList(value);
+        scanFilter.put(attribute, condition);
+        final ScanRequest scanRequest = new ScanRequest(getTableName()).withScanFilter(scanFilter);
+        final ScanResult scanResult = getDynamoDBClient().scan(scanRequest);
+
+        // parse the result and transform it to a List of MediaTableData
+        final List<Map<String,AttributeValue>> itemList = scanResult.getItems();
+
+        // if no items matched the filter return null
+        if(0 == scanResult.getCount()) {
+            return null;
+        }
+
+        return itemList;
     }
 
 
