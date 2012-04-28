@@ -59,10 +59,10 @@ public abstract class DynamoTable {
               .withReadCapacityUnits(myReadCapacity)
               .withWriteCapacityUnits(myWriteCapacity));
 
+        @SuppressWarnings("unused")
         final TableDescription createdTableDescription =
-          myDynamoDB.createTable(createTableRequest).getTableDescription();
-
-        System.out.println("\nCreated Table: " + createdTableDescription);
+                myDynamoDB.createTable(createTableRequest).getTableDescription();
+//        System.out.println("\nCreated Table: " + createdTableDescription);
 
         // we have to wait for the table to be usable
         waitForTableToBecomeAvailable();

@@ -1,11 +1,15 @@
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.IOUtils;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -20,41 +24,26 @@ import com.amazonaws.services.dynamodb.model.ComparisonOperator;
 public class AmazonDynamoDBSample {
 
 
-    public static void main(String[] args) {
-        List<List<String>> data = loadData();
-        printLoadedData(data);
-
-//        MediaTableDemo();
-    }
-
-    
     public static void MediaTableDemo() {
         try {
             // create a table manager
-            MediaTable table = new MediaTable("my-favorite-movies-table");
+            MediaTable table = new MediaTable("media");
 
             // create the table
-            table.createTable(MediaTable.nameAttribute_PK, "S");
+            table.createTable(MediaTable.titleAttribute_PK, "S");
 
             // describe the table
             table.describeTable();
 
-            // add an item
-            table.addItemToTable(new MediaTableData("Bill & Ted's Excellent Adventure",
-                                                    1989,
-                                                    "****",
-                                                    "James"));
-
-            // add another item
-            table.addItemToTable(new MediaTableData("Airplane",
-                                                    1980,
-                                                    "*****",
-                                                    "Billy Bob"));
+            // add the items read in from disk
+            for(final MediaTableData data : loadData()) {
+                table.addItemToTable(data);
+            }
 
             // scan the table
-            printDataItem(table.scanTable(ComparisonOperator.EQ.toString(),
-                                          MediaTable.fanAttribute,
-                                          "James"));
+            printDataItem(table.scanTable(ComparisonOperator.NE.toString(),
+                                          MediaTable.imdbRatingAttribute,
+                                          0));
 
             System.out.println("Done!");
         } catch(final AmazonServiceException ase) {
@@ -79,8 +68,12 @@ public class AmazonDynamoDBSample {
     }
 
 
-    public static List<List<String>> loadData() {
-        final List<List<String>> returnList = new ArrayList<List<String>>();
+    /**
+     * 
+     * @return
+     */
+    public static List<MediaTableData> loadData() {
+        final List<MediaTableData> returnList = new ArrayList<MediaTableData>();
 
         try {
             // find all of the folders in the data directory
@@ -96,21 +89,31 @@ public class AmazonDynamoDBSample {
                 final File movieInfo = new File("data/" + child + "/info.txt");
                 final BufferedReader reader = new BufferedReader(
                                             new FileReader(movieInfo));
-            
-                final String title = reader.readLine();
-                final String rating = reader.readLine();
-                final String year = reader.readLine();
-                final String runTimeMins = reader.readLine();
-                final String director = reader.readLine();
-                final String imdbRating = reader.readLine();
 
-                final List<String> info = new ArrayList<String>();
-                info.add(title.substring(8));
-                info.add(rating.substring(9));
-                info.add(year.substring(7));
-                info.add(runTimeMins.substring(17));
-                info.add(director.substring(11));
-                info.add(imdbRating.substring(14));
+                // the text attributes are easy
+                final String title = reader.readLine().substring(8);
+                final String rating = reader.readLine().substring(9);
+
+                final String yearStr = reader.readLine().substring(7);
+                final int    year = Integer.parseInt(yearStr);
+
+                final String runtimeStr = reader.readLine().substring(16);
+                final int    runtime = Integer.parseInt(runtimeStr);
+
+                final String director = reader.readLine().substring(11);
+
+                final String imdbRatingStr = reader.readLine().substring(14);
+                final int    imdbRating = Integer.parseInt(imdbRatingStr);
+
+                final String base64Image = encodeImage("data/" + child + "/image.jpg");
+
+                final MediaTableData info = new MediaTableData(title,
+                                                               rating,
+                                                               year,
+                                                               runtime,
+                                                               director,
+                                                               imdbRating,
+                                                               base64Image);
 
                 returnList.add(info);
             }
@@ -130,44 +133,36 @@ public class AmazonDynamoDBSample {
     }
 
 
-    public static void printDataItem(final List<MediaTableData> items) {
-        if(null == items) {
-            System.out.println("No results returned!");
-            return;
-        }
-
-        for(int i = 0; i < items.size(); i++) {
-            final MediaTableData data = items.get(i);
-
-            System.out.println("\nItem " + (i + 1) + " of " + items.size());
-            System.out.println("----------------------------------------\n" +
-                               "    Name  :  " + data.name   + "\n" +
-                               "    Year  :  " + data.year   + "\n" +
-                               "    Rating:  " + data.rating + "\n" +
-                               "    Fan   :  " + data.fan    + "\n" +
-                               "----------------------------------------\n");
-        }
+    public static final String encodeImage(final String path)
+      throws FileNotFoundException, IOException {
+        // The encodeBase64 method take a byte[] as the parameter. The byte[] 
+        // can be from a simple string like in this example or it can be from
+        // an image file data.
+        final File image = new File(path);
+        byte[] encoded = Base64.encodeBase64(IOUtils.toByteArray(new FileInputStream(image)));
+        return new String(encoded);
     }
 
 
-    public static void printLoadedData(final List<List<String>> data) {
+    public static void printDataItem(final List<MediaTableData> data) {
         if(null == data) {
-            System.out.println("No data was loaded!");
+            System.out.println("No data to print!");
             return;
         }
 
         for(int i = 0; i < data.size(); i++) {
-            final List<String> datum = data.get(i);
+            final MediaTableData datum = data.get(i);
 
             System.out.println("\nItem " + (i + 1) + " of " + data.size());
-            System.out.println("----------------------------------------\n" +
-                               "    Title        :  " + datum.get(0) + "\n" +
-                               "    Rating       :  " + datum.get(1) + "\n" +
-                               "    Year         :  " + datum.get(2) + "\n" +
-                               "    Runtime (min):  " + datum.get(3) + "\n" +
-                               "    Director     :  " + datum.get(4) + "\n" +
-                               "    IMDB Rating  :  " + datum.get(5) + "\n" +
-                               "----------------------------------------\n");
+            System.out.println("---------------------------------------------\n" +
+                               "    Title        :  " + datum.title       + "\n" +
+                               "    MPAA Rating  :  " + datum.mpaaRating  + "\n" +
+                               "    Year         :  " + datum.year        + "\n" +
+                               "    Runtime (min):  " + datum.runtime     + "\n" +
+                               "    Director     :  " + datum.director    + "\n" +
+                               "    IMDB Rating  :  " + datum.imdbRating  + "\n" +
+                               "    Base64 Image :  " + datum.base64Image + "\n" +
+                               "---------------------------------------------\n");
         }
     }
 }
