@@ -36,10 +36,13 @@ public class MediaTable extends DynamoTable {
 
     /**
      * 
-     * @param tableName
      */
-    public MediaTable(final String tableName) throws IOException {
-        super(tableName);
+    public static MediaTable getInstance() throws IOException {
+        if(null == theInstance) {
+            theInstance = new MediaTable("media");
+        }
+
+        return theInstance;
     }
 
 
@@ -51,9 +54,8 @@ public class MediaTable extends DynamoTable {
         final Map<String, AttributeValue> item = newItem(data);
         final PutItemRequest putItemRequest = new PutItemRequest(getTableName(), item);
 
-        @SuppressWarnings("unused")
         final PutItemResult putItemResult = getDynamoDBClient().putItem(putItemRequest);
-//        System.out.println("\nItem: " + putItemResult);
+        System.out.println("\nItem: " + putItemResult);
     }
 
 
@@ -91,6 +93,8 @@ public class MediaTable extends DynamoTable {
         }
 
         Collections.sort(returnList);
+        System.out.println("Successfully retreived " + returnList.size() +
+                           " items from \"" + getTableName() + "\"");
         return returnList;
     }
 
@@ -107,13 +111,22 @@ public class MediaTable extends DynamoTable {
 
     /**
      * 
+     * @param tableName
+     */
+    private MediaTable(final String tableName) throws IOException {
+        super(tableName);
+    }
+
+
+    /**
+     * 
      * @param name
      * @param year
      * @param rating
      * @param fans
      * @return
      */
-    private final Map<String, AttributeValue> newItem(final MediaTableData data) {
+    private Map<String, AttributeValue> newItem(final MediaTableData data) {
         final Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
 
         item.put(titleAttribute_PK, new AttributeValue(data.title));
@@ -132,5 +145,5 @@ public class MediaTable extends DynamoTable {
     // PRIVATE MEMBERS //
     /////////////////////
 
-
+    private static MediaTable theInstance = null;
 }

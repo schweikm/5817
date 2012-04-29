@@ -10,6 +10,7 @@ import com.amazonaws.services.dynamodb.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodb.model.AttributeValue;
 import com.amazonaws.services.dynamodb.model.Condition;
 import com.amazonaws.services.dynamodb.model.CreateTableRequest;
+import com.amazonaws.services.dynamodb.model.DeleteTableRequest;
 import com.amazonaws.services.dynamodb.model.DescribeTableRequest;
 import com.amazonaws.services.dynamodb.model.KeySchema;
 import com.amazonaws.services.dynamodb.model.KeySchemaElement;
@@ -59,13 +60,30 @@ public abstract class DynamoTable {
               .withReadCapacityUnits(myReadCapacity)
               .withWriteCapacityUnits(myWriteCapacity));
 
-        @SuppressWarnings("unused")
         final TableDescription createdTableDescription =
                 myDynamoDB.createTable(createTableRequest).getTableDescription();
-//        System.out.println("\nCreated Table: " + createdTableDescription);
+        System.out.println("\nCreated Table: " + createdTableDescription);
 
         // we have to wait for the table to be usable
-        waitForTableToBecomeAvailable();
+        waitWhileTableIs(TableStatus.CREATING.toString());
+    }
+    
+    
+    /**
+     * Create a table
+     * 
+     * @param tableName
+     */
+    public void deleteTable() {
+        final DeleteTableRequest deleteTableRequest =
+          new DeleteTableRequest().withTableName(myTableName);
+
+        final TableDescription deletedTableDescription =
+                myDynamoDB.deleteTable(deleteTableRequest).getTableDescription();
+        System.out.println("\nDeleting Table: " + deletedTableDescription);
+
+        // we have to wait for the table to be usable
+        waitWhileTableIs(TableStatus.DELETING.toString());
     }
 
 
@@ -177,11 +195,13 @@ public abstract class DynamoTable {
             return;
         }
 
+        System.out.print("Creating client connection ... ");
         final AWSCredentials credentials =
           new PropertiesCredentials(
             DynamoTable.class.getResourceAsStream("AwsCredentials.properties"));
 
         myDynamoDB = new AmazonDynamoDBClient(credentials);
+        System.out.println("Done!");
     }
 
 
@@ -190,13 +210,13 @@ public abstract class DynamoTable {
      * 
      * @param tableName
      */
-    private void waitForTableToBecomeAvailable() {
-        System.out.println("\nWaiting for " + myTableName + " to become ACTIVE...");
+    private void waitWhileTableIs(final String state) {
+        System.out.println("\nWaiting while \"" + myTableName + "\" is in state " + state + "...");
 
         final long startTime = System.currentTimeMillis();
         final long endTime = startTime + (10 * 60 * 1000);
         while (System.currentTimeMillis() < endTime) {
-            try {Thread.sleep(1000 * 20);} catch (Exception e) {}
+            try {Thread.sleep(1000 * 2);} catch (Exception e) {}
             try {
                 final DescribeTableRequest request =
                   new DescribeTableRequest().withTableName(myTableName);
@@ -204,14 +224,18 @@ public abstract class DynamoTable {
                   myDynamoDB.describeTable(request).getTable();
                 final String tableStatus = tableDescription.getTableStatus();
                 System.out.println("  - current state: " + tableStatus);
-                if (tableStatus.equals(TableStatus.ACTIVE.toString())) return;
+                if (!tableStatus.equals(state)) return;
             } catch (final AmazonServiceException ase) {
-                if (ase.getErrorCode().equalsIgnoreCase("ResourceNotFoundException") == false) {
+                if (true == ase.getErrorCode().equalsIgnoreCase("ResourceNotFoundException")) {
+                    // when we get here the table no longer exists - ignore it
+                    return;
+                }
+                else {
                     throw ase;
                 }
             }
         }
-        throw new RuntimeException("\nTable " + myTableName + " never went active");
+        throw new RuntimeException("\nTable " + myTableName + " never got out of state " + state);
     }
 
 
