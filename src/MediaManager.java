@@ -2,12 +2,14 @@ import java.awt.Dimension;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,12 +26,19 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
+
 import com.amazonaws.services.dynamodb.model.ComparisonOperator;
 
 import org.apache.commons.codec.binary.Base64;
+
 import org.apache.commons.io.IOUtils;
 
 
+/**
+ * 
+ * @author marc
+ *
+ */
 public class MediaManager implements ActionListener {
 
 
@@ -38,6 +47,10 @@ public class MediaManager implements ActionListener {
     //////////////////////
 
 
+    /**
+     * 
+     * @param args
+     */
     public static void main(final String[] args) {
         //Schedule a job for the event-dispatching thread:
         //creating and showing this application's GUI.
@@ -48,32 +61,53 @@ public class MediaManager implements ActionListener {
         });
     }
 
-    public MediaManager() {
-        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.PAGE_AXIS));
-        mainPanel.setOpaque(true);
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-        mainPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-        mainPanel.add(MediaPanel.getInstance());
-        mainPanel.add(Box.createGlue());
+    /**
+     * 
+     */
+    public MediaManager() {
+        myMainPanel.setLayout(new BoxLayout(myMainPanel, BoxLayout.PAGE_AXIS));
+        myMainPanel.setOpaque(true);
+        myMainPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
+        myMainPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        myMainPanel.add(MediaPanel.getInstance());
+        myMainPanel.add(Box.createGlue());
     }
 
 
+    /**
+     * 
+     */
     public void actionPerformed(final ActionEvent event) {
         try {
             //
             // FILE MENU
             //
+
+            // Refresh Display
             if(event.getActionCommand().equals(FILE_REFRESH)) {
-                MediaPanel.getInstance().addItems(myItems);
-                MediaPanel.getInstance().updateDisplay(0);
+                if(0 == myItems.size()) {
+                    
+                } else {
+                    MediaPanel.getInstance().addItems(myItems);
+                    MediaPanel.getInstance().updateDisplay(0);
+                }
             }
+
+            // Clear Display
             else if(event.getActionCommand().equals(FILE_CLEAR)) {
-                MediaPanel.getInstance().clearDisplay();
+                if(0 == myItems.size()) {
+                    
+                } else {
+                    MediaPanel.getInstance().clearDisplay();
+                }
             }
+
+            // Quit
             else if(event.getActionCommand().equals(FILE_QUIT)) {
-                mainFrame.setVisible(false);
-                mainFrame.dispose();
+                myMainFrame.setVisible(false);
+                myMainFrame.dispose();
                 System.exit(0);
             }
 
@@ -81,20 +115,21 @@ public class MediaManager implements ActionListener {
             //
             // DYNAMO MENU
             //
-            else if(event.getActionCommand().equals(DYNAMO_CREATE)) {
-                runDynamoCommand(DYNAMO_CREATE);
-            }
-            else if(event.getActionCommand().equals(DYNAMO_DESCRIBE)) {
-                runDynamoCommand(DYNAMO_DESCRIBE);
-            }
-            else if(event.getActionCommand().equals(DYNAMO_LOAD)) {
-                runDynamoCommand(DYNAMO_LOAD);
-            }
-            else if(event.getActionCommand().equals(DYNAMO_SCAN)) {
-                runDynamoCommand(DYNAMO_SCAN);
-            }
-            else if(event.getActionCommand().equals(DYNAMO_DELETE)) {
-                runDynamoCommand(DYNAMO_DELETE);
+
+            //: MAINTENANCE
+            //    These events are redirected to the runDynamoCommand method
+            //    which spawns a new thread to service the request.
+            //    Dynamo commands take a long time to complete and it will
+            //    hang the GUI otherwise
+
+            else if(event.getActionCommand().equals(DYNAMO_CREATE)   ||
+                    event.getActionCommand().equals(DYNAMO_DESCRIBE) ||
+                    event.getActionCommand().equals(DYNAMO_LOAD)     ||
+                    event.getActionCommand().equals(DYNAMO_SCAN)     ||
+                    event.getActionCommand().equals(DYNAMO_DELETE)     ) {
+
+                // forward the request
+                runDynamoCommand(event.getActionCommand());
             }
 
 
@@ -106,7 +141,6 @@ public class MediaManager implements ActionListener {
             }
         }
         catch(final IOException ioex) {
-            System.err.println("MediaManager():  Caught IOException!");
             System.err.println(ioex.getMessage());
             ioex.printStackTrace();
         }
@@ -123,6 +157,9 @@ public class MediaManager implements ActionListener {
     ///////////////////////
 
 
+    /**
+     * 
+     */
     private void initLookAndFeel() {
         String lookAndFeel = null;
 
@@ -143,17 +180,17 @@ public class MediaManager implements ActionListener {
 
             try {
                 UIManager.setLookAndFeel(lookAndFeel);
-            } catch (ClassNotFoundException e) {
+            } catch (final ClassNotFoundException e) {
                 System.err.println("Couldn't find class for specified look and feel:"
                                    + lookAndFeel);
                 System.err.println("Did you include the L&F library in the class path?");
                 System.err.println("Using the default look and feel.");
-            } catch (UnsupportedLookAndFeelException e) {
+            } catch (final UnsupportedLookAndFeelException e) {
                 System.err.println("Can't use the specified look and feel ("
                                    + lookAndFeel
                                    + ") on this platform.");
                 System.err.println("Using the default look and feel.");
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 System.err.println("Couldn't get specified look and feel ("
                                    + lookAndFeel
                                    + "), for some reason.");
@@ -163,26 +200,34 @@ public class MediaManager implements ActionListener {
         }
     }
 
+
+    /**
+     * 
+     */
     private void createAndShowGUI() {
         //Set the look and feel.
         initLookAndFeel();
 
         //Create and set up the window.
-        mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        mainFrame.setPreferredSize(new Dimension(600, 500));
+        myMainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        myMainFrame.setPreferredSize(new Dimension(600, 500));
 
         //Create and set up the content pane.
-        MediaManager gui = new MediaManager();
-        mainFrame.setJMenuBar(gui.createMenuBar());
-        gui.mainPanel.setOpaque(true); //content panes must be opaque
-        mainFrame.setContentPane(gui.mainPanel);
+        final MediaManager gui = new MediaManager();
+        myMainFrame.setJMenuBar(gui.createMenuBar());
+        gui.myMainPanel.setOpaque(true); //content panes must be opaque
+        myMainFrame.setContentPane(gui.myMainPanel);
 
         //Display the window.
-        mainFrame.pack();
-        mainFrame.setVisible(true);
+        myMainFrame.pack();
+        myMainFrame.setVisible(true);
     }
-    
-    
+
+
+    /**
+     * 
+     * @return
+     */
     private JMenuBar createMenuBar() {
         final JMenuBar menuBar = new JMenuBar();
 
@@ -209,9 +254,16 @@ public class MediaManager implements ActionListener {
 
         return menuBar;
     }
-    
-    
-    private void addMenuItem(final JMenu menu, final String name,
+
+
+    /**
+     * 
+     * @param menu
+     * @param name
+     * @param action
+     */
+    private void addMenuItem(final JMenu menu,
+                             final String name,
                              final String action) {
 
         final JMenuItem menuItem = new JMenuItem(name);
@@ -219,36 +271,62 @@ public class MediaManager implements ActionListener {
         menuItem.addActionListener(this);
         menu.add(menuItem);
     }
-    
-    
+
+
+    /**
+     * 
+     * @param action
+     */
     private void runDynamoCommand(final String action) {
         new Thread() {
             public void run() {
                 try {
+                    final long start = System.nanoTime();
+
+                    // create table
                     if(action.equals(DYNAMO_CREATE)) {
+                        System.out.println("\n---------- DynamoDB / Create Table -------------------------");
                         MediaTable.getInstance().createTable(MediaTable.titleAttribute_PK, "S");
                     }
+
+                    // describe table
                     else if(action.equals(DYNAMO_DESCRIBE)) {
+                        System.out.println("\n---------- DynamoDB / Describe Table -----------------------");
                         MediaTable.getInstance().describeTable();
                     }
+
+                    // load data into table
                     else if(action.equals(DYNAMO_LOAD)) {
+                        System.out.println("\n---------- DynamoDB / Load Data Into Table -----------------");
                         for(final MediaTableData data : loadData()) {
                             MediaTable.getInstance().addItemToTable(data);
                         }
                     }
+
+                    // scan all data
                     else if(action.equals(DYNAMO_SCAN)) {
+                        System.out.println("\n---------- DynamoDB / Scan All Data ------------------------");
                         myItems = MediaTable.getInstance().scanTable(ComparisonOperator.NE.toString(),
                                                                      MediaTable.imdbRatingAttribute,
                                                                      0);
                     }
+
+                    // delete table
                     else if(action.equals(DYNAMO_DELETE)) {
+                        System.out.println("\n---------- DynamoDB / Delete Table -------------------------");
                         MediaTable.getInstance().deleteTable();
                     }
+
+                    // unknown
                     else {
                         System.err.println("Unknown Dynamo command:  " + action);
+                        return;
                     }
-                    
-                    System.out.println("\nCommand completed successfully");
+
+                    final long end = System.nanoTime();
+                    final double totalTime = (end - start) / 1.0e9;
+                    System.out.println("\nTotal time:  " + totalTime + " seconds");
+                    System.out.println(LOG_FOOTER);
                 }
                 catch(final AmazonServiceException ase) {
                     System.out.println("Caught an AmazonServiceException, which means your request made it "
@@ -266,8 +344,7 @@ public class MediaManager implements ActionListener {
                     System.out.println("Error Message: " + ace.getMessage());
                 }
                 catch(final IOException ioex) {
-                    System.err.println("MediaTableDemo:  Caught IOException!");
-                    System.err.println("Message:  " + ioex.getMessage());
+                    System.err.println(ioex.getMessage());
                     ioex.printStackTrace();
                 }
             }
@@ -295,7 +372,7 @@ public class MediaManager implements ActionListener {
 
                 final File movieInfo = new File("data/" + child + "/info.txt");
                 final BufferedReader reader = new BufferedReader(
-                                            new FileReader(movieInfo));
+                                                new FileReader(movieInfo));
 
                 // the text attributes are easy
                 final String title = reader.readLine().substring(8);
@@ -326,33 +403,42 @@ public class MediaManager implements ActionListener {
             }
         }
         catch(final FileNotFoundException fnfex) {
-            System.err.println("loadData:  Caught FileNotFoundException!");
             System.err.println(fnfex.getMessage());
             fnfex.printStackTrace();
         }
         catch(final IOException ioex) {
-            System.err.println("loadData:  Caught IOException!");
             System.err.println(ioex.getMessage());
             ioex.printStackTrace();
         }
 
-        System.out.println("Successfully read " + returnList.size() + " items from disk");
+        System.out.println("Successfully read " + returnList.size() + " items from disk\n");
         return returnList;
     }
 
 
+    /**
+     * 
+     * @param path
+     * @return
+     * @throws FileNotFoundException
+     * @throws IOException
+     */
     private String encodeImage(final String path)
       throws FileNotFoundException, IOException {
         // The encodeBase64 method take a byte[] as the parameter. The byte[] 
         // can be from a simple string like in this example or it can be from
         // an image file data.
         final File image = new File(path);
-        byte[] encoded = Base64.encodeBase64(IOUtils.toByteArray(new FileInputStream(image)));
+        final byte[] encoded = Base64.encodeBase64(IOUtils.toByteArray(new FileInputStream(image)));
         return new String(encoded);
     }
 
 
     @SuppressWarnings("unused")
+    /**
+     * 
+     * @param data
+     */
     private void printDataItem(final List<MediaTableData> data) {
         if(null == data) {
             System.out.println("No data to print!");
@@ -382,11 +468,11 @@ public class MediaManager implements ActionListener {
 
 
     // Swing components
-    private final JPanel mainPanel = new JPanel();
-    private final JFrame mainFrame = new JFrame("Media Manager");
+    private final JPanel myMainPanel = new JPanel();
+    private final JFrame myMainFrame = new JFrame("Media Manager");
 
     // data loaded from table scan
-    private List<MediaTableData> myItems = null;
+    private List<MediaTableData> myItems = new ArrayList<MediaTableData>();
 
     //Specify the look and feel to use.  Valid values:
     //null (use the default), "Metal", "System", "Motif", "GTK+"
@@ -394,13 +480,17 @@ public class MediaManager implements ActionListener {
 
     // action commands - File menu
     private static final String FILE_REFRESH = "file_refresh";
-    private static final String FILE_CLEAR = "file_clear";
-    private static final String FILE_QUIT = "file_quit";
+    private static final String FILE_CLEAR   = "file_clear";
+    private static final String FILE_QUIT    = "file_quit";
 
     // action commands - Dynamo menu
-    private static final String DYNAMO_CREATE = "dynamo_create";
+    private static final String DYNAMO_CREATE   = "dynamo_create";
     private static final String DYNAMO_DESCRIBE = "dynamo_describe";
-    private static final String DYNAMO_LOAD = "dynamo_load";
-    private static final String DYNAMO_SCAN = "dynamo_scan";
-    private static final String DYNAMO_DELETE = "dynamo_delete";
+    private static final String DYNAMO_LOAD     = "dynamo_load";
+    private static final String DYNAMO_SCAN     = "dynamo_scan";
+    private static final String DYNAMO_DELETE   = "dynamo_delete";
+
+    // GUI
+    private static final String LOG_FOOTER =
+      "------------------------------------------------------------\n";
 }

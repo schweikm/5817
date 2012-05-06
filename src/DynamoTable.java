@@ -1,12 +1,16 @@
 import java.io.IOException;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.amazonaws.AmazonServiceException;
+
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
+
 import com.amazonaws.services.dynamodb.AmazonDynamoDBClient;
+
 import com.amazonaws.services.dynamodb.model.AttributeValue;
 import com.amazonaws.services.dynamodb.model.Condition;
 import com.amazonaws.services.dynamodb.model.CreateTableRequest;
@@ -46,9 +50,9 @@ public abstract class DynamoTable {
 
 
     /**
-     * Create a table
      * 
-     * @param tableName
+     * @param primaryKeyName
+     * @param primaryKeyType
      */
     public void createTable(final String primaryKeyName,
                             final String primaryKeyType) {
@@ -57,22 +61,20 @@ public abstract class DynamoTable {
             .withKeySchema(new KeySchema(new KeySchemaElement()
               .withAttributeName(primaryKeyName).withAttributeType(primaryKeyType)))
             .withProvisionedThroughput(new ProvisionedThroughput()
-              .withReadCapacityUnits(myReadCapacity)
-              .withWriteCapacityUnits(myWriteCapacity));
+              .withReadCapacityUnits(ourReadCapacity)
+              .withWriteCapacityUnits(ourWriteCapacity));
 
         final TableDescription createdTableDescription =
                 myDynamoDB.createTable(createTableRequest).getTableDescription();
-        System.out.println("\nCreated Table: " + createdTableDescription);
+        System.out.println("Created Table: " + createdTableDescription);
 
         // we have to wait for the table to be usable
         waitWhileTableIs(TableStatus.CREATING.toString());
     }
-    
-    
+
+
     /**
-     * Create a table
      * 
-     * @param tableName
      */
     public void deleteTable() {
         final DeleteTableRequest deleteTableRequest =
@@ -80,7 +82,7 @@ public abstract class DynamoTable {
 
         final TableDescription deletedTableDescription =
                 myDynamoDB.deleteTable(deleteTableRequest).getTableDescription();
-        System.out.println("\nDeleting Table: " + deletedTableDescription);
+        System.out.println("\nDeleted Table: " + deletedTableDescription);
 
         // we have to wait for the table to be usable
         waitWhileTableIs(TableStatus.DELETING.toString());
@@ -88,9 +90,7 @@ public abstract class DynamoTable {
 
 
     /**
-     * Describe our new table
      * 
-     * @param tableName
      */
     public void describeTable() {
         final DescribeTableRequest describeTableRequest =
@@ -98,7 +98,7 @@ public abstract class DynamoTable {
         final TableDescription tableDescription =
           myDynamoDB.describeTable(describeTableRequest).getTable();
 
-        System.out.println("\nTable Description: " + tableDescription);
+        System.out.println("Table Description: " + tableDescription);
     }
 
 
@@ -106,7 +106,7 @@ public abstract class DynamoTable {
      * 
      * @return
      */
-    public final String getTableName() {
+    public String getTableName() {
         return myTableName;
     }
 
@@ -120,7 +120,7 @@ public abstract class DynamoTable {
      * 
      * @return
      */
-    protected final AmazonDynamoDBClient getDynamoDBClient() {
+    protected AmazonDynamoDBClient getDynamoDBClient() {
         return myDynamoDB;
     }
 
@@ -132,10 +132,9 @@ public abstract class DynamoTable {
      * @param valueObj
      * @return
      */
-    protected final List<Map<String,AttributeValue>>
-      getRawScanResult(final String operator,
-                       final String attribute,
-                       final Object valueObj) {
+    protected List<Map<String,AttributeValue>> getRawScanResult(final String operator,
+                                                                final String attribute,
+                                                                final Object valueObj) {
 
         // to be generic, let's find the type of the attribute
         AttributeValue value = null;
@@ -147,8 +146,8 @@ public abstract class DynamoTable {
             value = new AttributeValue().withN(new Integer(val).toString());
         }
         else {
-            System.err.println("Unable to complete scan request for  attribute:  " +
-                               attribute + "  value" + valueObj.toString());
+            System.err.println("Unable to complete scan request for attribute:  " +
+                               attribute + "  value:  " + valueObj.toString());
             return null;
         }
 
@@ -161,15 +160,12 @@ public abstract class DynamoTable {
         final ScanRequest scanRequest = new ScanRequest(getTableName()).withScanFilter(scanFilter);
         final ScanResult scanResult = getDynamoDBClient().scan(scanRequest);
 
-        // parse the result and transform it to a List of MediaTableData
-        final List<Map<String,AttributeValue>> itemList = scanResult.getItems();
-
         // if no items matched the filter return null
         if(0 == scanResult.getCount()) {
             return null;
         }
 
-        return itemList;
+        return scanResult.getItems();
     }
 
 
@@ -179,15 +175,8 @@ public abstract class DynamoTable {
 
 
     /**
-     * The only information needed to create a client are security credentials
-     * consisting of the AWS Access Key ID and Secret Access Key. All other
-     * configuration, such as the service endpoints, are performed
-     * automatically. Client parameters, such as proxies, can be specified in an
-     * optional ClientConfiguration object when constructing a client.
-     *
-     * @see com.amazonaws.auth.BasicAWSCredentials
-     * @see com.amazonaws.auth.PropertiesCredentials
-     * @see com.amazonaws.ClientConfiguration
+     * 
+     * @throws IOException
      */
     private void init() throws IOException {
         // only need to run init once!
@@ -195,20 +184,17 @@ public abstract class DynamoTable {
             return;
         }
 
-        System.out.print("Creating client connection ... ");
         final AWSCredentials credentials =
           new PropertiesCredentials(
             DynamoTable.class.getResourceAsStream("AwsCredentials.properties"));
 
         myDynamoDB = new AmazonDynamoDBClient(credentials);
-        System.out.println("Done!");
     }
 
 
     /**
-     * Creating a table takes a long time
      * 
-     * @param tableName
+     * @param state
      */
     private void waitWhileTableIs(final String state) {
         System.out.println("\nWaiting while \"" + myTableName + "\" is in state " + state + "...");
@@ -220,14 +206,20 @@ public abstract class DynamoTable {
             try {
                 final DescribeTableRequest request =
                   new DescribeTableRequest().withTableName(myTableName);
+
                 final TableDescription tableDescription =
                   myDynamoDB.describeTable(request).getTable();
+
                 final String tableStatus = tableDescription.getTableStatus();
                 System.out.println("  - current state: " + tableStatus);
+
                 if (!tableStatus.equals(state)) return;
             } catch (final AmazonServiceException ase) {
-                if (true == ase.getErrorCode().equalsIgnoreCase("ResourceNotFoundException")) {
-                    // when we get here the table no longer exists - ignore it
+                if (ase.getErrorCode().equals("ResourceNotFoundException")) {
+                    //:MAINTENANCE
+                    //  If we catch this Exception then the table we are querying
+                    //  no longer exists.  This is what we want when we are waiting
+                    //  for a table in the DELETING state
                     return;
                 }
                 else {
@@ -248,11 +240,11 @@ public abstract class DynamoTable {
     private String myTableName;
 
     // DynamoDB handle
-    private static AmazonDynamoDBClient myDynamoDB;
+    private AmazonDynamoDBClient myDynamoDB;
 
     // free read capacity
-    private static final Long myReadCapacity = 10L;
+    private static final Long ourReadCapacity = 10L;
 
     // free write capacity
-    private static final Long myWriteCapacity = 5L;
+    private static final Long ourWriteCapacity = 5L;
 }

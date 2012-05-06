@@ -36,10 +36,12 @@ public class MediaTable extends DynamoTable {
 
     /**
      * 
+     * @return
+     * @throws IOException
      */
     public static MediaTable getInstance() throws IOException {
         if(null == theInstance) {
-            theInstance = new MediaTable("media");
+            theInstance = new MediaTable(ourTableName);
         }
 
         return theInstance;
@@ -55,15 +57,16 @@ public class MediaTable extends DynamoTable {
         final PutItemRequest putItemRequest = new PutItemRequest(getTableName(), item);
 
         final PutItemResult putItemResult = getDynamoDBClient().putItem(putItemRequest);
-        System.out.println("\nItem: " + putItemResult);
+        System.out.println("Item: " + putItemResult);
     }
 
 
     /**
-     * Scan items for movies
-     * @param tableName
+     * 
      * @param operator
-     * @param year
+     * @param attribute
+     * @param valueObj
+     * @return
      */
     public List<MediaTableData> scanTable(final String operator,
                                           final String attribute,
@@ -112,6 +115,7 @@ public class MediaTable extends DynamoTable {
     /**
      * 
      * @param tableName
+     * @throws IOException
      */
     private MediaTable(final String tableName) throws IOException {
         super(tableName);
@@ -120,21 +124,18 @@ public class MediaTable extends DynamoTable {
 
     /**
      * 
-     * @param name
-     * @param year
-     * @param rating
-     * @param fans
+     * @param data
      * @return
      */
     private Map<String, AttributeValue> newItem(final MediaTableData data) {
         final Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
 
-        item.put(titleAttribute_PK, new AttributeValue(data.title));
-        item.put(mpaaRatingAttribute, new AttributeValue(data.mpaaRating));
-        item.put(yearAttribute,    new AttributeValue().withN(Integer.toString(data.year)));
-        item.put(runtimeAttribute,    new AttributeValue().withN(Integer.toString(data.runtime)));
-        item.put(directorAttribute, new AttributeValue(data.director));
-        item.put(imdbRatingAttribute,    new AttributeValue().withN(Integer.toString(data.imdbRating)));
+        item.put(titleAttribute_PK,    new AttributeValue(data.title));
+        item.put(mpaaRatingAttribute,  new AttributeValue(data.mpaaRating));
+        item.put(yearAttribute,        new AttributeValue().withN(Integer.toString(data.year)));
+        item.put(runtimeAttribute,     new AttributeValue().withN(Integer.toString(data.runtime)));
+        item.put(directorAttribute,    new AttributeValue(data.director));
+        item.put(imdbRatingAttribute,  new AttributeValue().withN(Integer.toString(data.imdbRating)));
         item.put(base64ImageAttribute, new AttributeValue(data.base64Image));
 
         return item;
@@ -145,5 +146,10 @@ public class MediaTable extends DynamoTable {
     // PRIVATE MEMBERS //
     /////////////////////
 
+
+    // Singleton instance
     private static MediaTable theInstance = null;
+
+    // table name
+    private static final String ourTableName = "media";
 }

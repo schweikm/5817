@@ -25,6 +25,11 @@ import javax.swing.JTextField;
 import org.apache.commons.codec.binary.Base64;
 
 
+/**
+ * 
+ * @author marc
+ *
+ */
 public class MediaPanel extends JPanel implements ActionListener {
 
 
@@ -38,10 +43,6 @@ public class MediaPanel extends JPanel implements ActionListener {
      * @return
      */
     public static MediaPanel getInstance() {
-        if(null == theInstance) {
-            theInstance = new MediaPanel();
-        }
-
         return theInstance;
     }
 
@@ -63,22 +64,26 @@ public class MediaPanel extends JPanel implements ActionListener {
      */
     public void actionPerformed(final ActionEvent event) {
         try {
+            // Previous Button
             if(event.getActionCommand().equals(PREVIOUS_BUTTON)) {
                 if(mySelectedIndex > 0) {
                     updateDisplay(--mySelectedIndex);
                 }
             }
+
+            // Next Button
             else if(event.getActionCommand().equals(NEXT_BUTTON)) {
                 if(mySelectedIndex < (myItems.size() - 1)) {
                     updateDisplay(++mySelectedIndex);
                 }
             }
+
+            // I don't know!
             else {
-                System.err.println("MediaPanel:  Unknown action received:  " + event.getActionCommand());
+                System.err.println("Unknown action received:  " + event.getActionCommand());
             }
         }
         catch(final IOException ioex) {
-            System.err.println("MediaManager::actionPerformed - Caught IOException!");
             System.err.println(ioex.getMessage());
             ioex.printStackTrace();
         }
@@ -88,6 +93,7 @@ public class MediaPanel extends JPanel implements ActionListener {
     /**
      * 
      * @param index
+     * @throws IOException
      */
     public void updateDisplay(final int index) throws IOException {
         if(index >= myItems.size()) {
@@ -101,16 +107,23 @@ public class MediaPanel extends JPanel implements ActionListener {
         myYearTextField.setText(((Integer)myItems.get(index).year).toString());
         myRuntimeTextField.setText(((Integer)myItems.get(index).runtime).toString());
         myDirectorTextField.setText(myItems.get(index).director);
-        myImdbRatingTextField.setText(((Integer)myItems.get(index).imdbRating).toString());
+
+        final int intRating = myItems.get(index).imdbRating;
+        final double doubleRating = (double)intRating / 10.0;
+        myImdbRatingTextField.setText(((Double)doubleRating).toString());
 
         // reconstruct the image from the Base64 encoded string
         final byte[] imageBytes = Base64.decodeBase64(myItems.get(index).base64Image);
         final InputStream in = new ByteArrayInputStream(imageBytes);
         final BufferedImage bImageFromConvert = ImageIO.read(in);
+        myImageLabel.setText("");
         myImageLabel.setIcon(new ImageIcon(bImageFromConvert));
     }
 
 
+    /**
+     * 
+     */
     public void clearDisplay() {
         myTitleTextField.setText("");
         myMpaaRatingTextField.setText("");
@@ -244,20 +257,20 @@ public class MediaPanel extends JPanel implements ActionListener {
 
 
     // Singleton instance
-    private static MediaPanel theInstance = null;
+    private static final MediaPanel theInstance = new MediaPanel();
 
-    // swing components
-    private final JTextField myTitleTextField = new JTextField();
+    // Swing components
+    private final JTextField myTitleTextField      = new JTextField();
     private final JTextField myMpaaRatingTextField = new JTextField();
-    private final JTextField myYearTextField = new JTextField();
-    private final JTextField myRuntimeTextField = new JTextField();
-    private final JTextField myDirectorTextField = new JTextField();
+    private final JTextField myYearTextField       = new JTextField();
+    private final JTextField myRuntimeTextField    = new JTextField();
+    private final JTextField myDirectorTextField   = new JTextField();
     private final JTextField myImdbRatingTextField = new JTextField();
-    private final JLabel myImageLabel = new JLabel();
+    private final JLabel     myImageLabel          = new JLabel();
 
     // action commands
     private static final String PREVIOUS_BUTTON = "previous_button";
-    private static final String NEXT_BUTTON = "next_button";
+    private static final String NEXT_BUTTON     = "next_button";
 
     // list of items to display
     private final List<MediaTableData> myItems = new ArrayList<MediaTableData>();

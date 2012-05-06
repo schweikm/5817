@@ -1,5 +1,21 @@
-
+/**
+ * 
+ * @author marc
+ *
+ */
 public class MediaTableData implements Comparable<MediaTableData> {
+
+
+    /**
+     * 
+     * @param in_title
+     * @param in_mpaaRating
+     * @param in_year
+     * @param in_runtime
+     * @param in_director
+     * @param in_imdbRating
+     * @param in_base64Image
+     */
     MediaTableData(final String in_title,
                    final String in_mpaaRating,
                    final int    in_year,
@@ -24,6 +40,7 @@ public class MediaTableData implements Comparable<MediaTableData> {
     public int compareTo(final MediaTableData o) {
         return title.compareTo(o.title);
     }
+
 
     public String title;
     public String mpaaRating;
