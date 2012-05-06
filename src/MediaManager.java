@@ -87,21 +87,12 @@ public class MediaManager implements ActionListener {
 
             // Refresh Display
             if(event.getActionCommand().equals(FILE_REFRESH)) {
-                if(0 == myItems.size()) {
-                    
-                } else {
-                    MediaPanel.getInstance().addItems(myItems);
-                    MediaPanel.getInstance().updateDisplay(0);
-                }
+                MediaPanel.getInstance().refreshDisplay();
             }
 
             // Clear Display
             else if(event.getActionCommand().equals(FILE_CLEAR)) {
-                if(0 == myItems.size()) {
-                    
-                } else {
-                    MediaPanel.getInstance().clearDisplay();
-                }
+                MediaPanel.getInstance().clearDisplay();
             }
 
             // Quit
@@ -116,11 +107,11 @@ public class MediaManager implements ActionListener {
             // DYNAMO MENU
             //
 
-            //: MAINTENANCE
-            //    These events are redirected to the runDynamoCommand method
-            //    which spawns a new thread to service the request.
-            //    Dynamo commands take a long time to complete and it will
-            //    hang the GUI otherwise
+            //:MAINTENANCE
+            //   These events are redirected to the runDynamoCommand method
+            //   which spawns a new thread to service the request.
+            //   Dynamo commands take a long time to complete and it will
+            //   hang the GUI otherwise
 
             else if(event.getActionCommand().equals(DYNAMO_CREATE)   ||
                     event.getActionCommand().equals(DYNAMO_DESCRIBE) ||
@@ -306,14 +297,22 @@ public class MediaManager implements ActionListener {
                     // scan all data
                     else if(action.equals(DYNAMO_SCAN)) {
                         System.out.println("\n---------- DynamoDB / Scan All Data ------------------------");
-                        myItems = MediaTable.getInstance().scanTable(ComparisonOperator.NE.toString(),
-                                                                     MediaTable.imdbRatingAttribute,
-                                                                     0);
+
+                        // get the data from the Dynamo table
+                        final List<MediaTableData> items =
+                          MediaTable.getInstance().scanTable(MediaTable.imdbRatingAttribute,
+                                                             ComparisonOperator.NE.toString(),
+                                                             0);
+
+                        // then add them to the GUI
+                        MediaPanel.getInstance().addItems(items);
                     }
 
                     // delete table
                     else if(action.equals(DYNAMO_DELETE)) {
                         System.out.println("\n---------- DynamoDB / Delete Table -------------------------");
+                        MediaPanel.getInstance().clearDisplay();
+                        MediaPanel.getInstance().refreshDisplay();
                         MediaTable.getInstance().deleteTable();
                     }
 
@@ -360,6 +359,8 @@ public class MediaManager implements ActionListener {
         final List<MediaTableData> returnList = new ArrayList<MediaTableData>();
 
         try {
+            System.out.print("Reading data from disk... ");
+        	
             // find all of the folders in the data directory
             final File data = new File("data");
             final String[] children = data.list();
@@ -411,7 +412,7 @@ public class MediaManager implements ActionListener {
             ioex.printStackTrace();
         }
 
-        System.out.println("Successfully read " + returnList.size() + " items from disk\n");
+        System.out.println("Done!  Read " + returnList.size() + " items\n");
         return returnList;
     }
 
@@ -470,9 +471,6 @@ public class MediaManager implements ActionListener {
     // Swing components
     private final JPanel myMainPanel = new JPanel();
     private final JFrame myMainFrame = new JFrame("Media Manager");
-
-    // data loaded from table scan
-    private List<MediaTableData> myItems = new ArrayList<MediaTableData>();
 
     //Specify the look and feel to use.  Valid values:
     //null (use the default), "Metal", "System", "Motif", "GTK+"

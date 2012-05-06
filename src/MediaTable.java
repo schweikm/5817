@@ -57,7 +57,7 @@ public class MediaTable extends DynamoTable {
         final PutItemRequest putItemRequest = new PutItemRequest(getTableName(), item);
 
         final PutItemResult putItemResult = getDynamoDBClient().putItem(putItemRequest);
-        System.out.println("Item: " + putItemResult);
+        System.out.println("Successfully added item - " + putItemResult);
     }
 
 
@@ -68,8 +68,8 @@ public class MediaTable extends DynamoTable {
      * @param valueObj
      * @return
      */
-    public List<MediaTableData> scanTable(final String operator,
-                                          final String attribute,
+    public List<MediaTableData> scanTable(final String attribute,
+                                          final String operator,
                                           final Object valueObj) {
 
         final List<Map<String,AttributeValue>> itemList =

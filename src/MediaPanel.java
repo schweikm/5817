@@ -92,32 +92,10 @@ public class MediaPanel extends JPanel implements ActionListener {
 
     /**
      * 
-     * @param index
      * @throws IOException
      */
-    public void updateDisplay(final int index) throws IOException {
-        if(index >= myItems.size()) {
-            System.err.println("MediaPanel::updateDisplay() - Invalid index specified!  " +
-                               "Index:  " + index + "  Size:  " + myItems.size());
-            return;
-        }
-
-        myTitleTextField.setText(myItems.get(index).title);
-        myMpaaRatingTextField.setText(myItems.get(index).mpaaRating);
-        myYearTextField.setText(((Integer)myItems.get(index).year).toString());
-        myRuntimeTextField.setText(((Integer)myItems.get(index).runtime).toString());
-        myDirectorTextField.setText(myItems.get(index).director);
-
-        final int intRating = myItems.get(index).imdbRating;
-        final double doubleRating = (double)intRating / 10.0;
-        myImdbRatingTextField.setText(((Double)doubleRating).toString());
-
-        // reconstruct the image from the Base64 encoded string
-        final byte[] imageBytes = Base64.decodeBase64(myItems.get(index).base64Image);
-        final InputStream in = new ByteArrayInputStream(imageBytes);
-        final BufferedImage bImageFromConvert = ImageIO.read(in);
-        myImageLabel.setText("");
-        myImageLabel.setIcon(new ImageIcon(bImageFromConvert));
+    public void refreshDisplay() throws IOException {
+        updateDisplay(0);
     }
 
 
@@ -136,6 +114,8 @@ public class MediaPanel extends JPanel implements ActionListener {
         myImageLabel.setText("No data loaded");
 
         myItems.clear();
+
+        mySelectedIndex = 0;
     }
 
 
@@ -248,6 +228,37 @@ public class MediaPanel extends JPanel implements ActionListener {
 
         this.add(imagePanel);
         this.add(textPanel);
+    }
+
+
+    /**
+     * 
+     * @param index
+     * @throws IOException
+     */
+    private void updateDisplay(final int index) throws IOException {
+        if(index >= myItems.size()) {
+//            System.err.println("MediaPanel::updateDisplay() - Invalid index specified!  " +
+//                               "Index:  " + index + "  Size:  " + myItems.size());
+            return;
+        }
+
+        myTitleTextField.setText(myItems.get(index).title);
+        myMpaaRatingTextField.setText(myItems.get(index).mpaaRating);
+        myYearTextField.setText(((Integer)myItems.get(index).year).toString());
+        myRuntimeTextField.setText(((Integer)myItems.get(index).runtime).toString());
+        myDirectorTextField.setText(myItems.get(index).director);
+
+        final int intRating = myItems.get(index).imdbRating;
+        final double doubleRating = (double)intRating / 10.0;
+        myImdbRatingTextField.setText(((Double)doubleRating).toString());
+
+        // reconstruct the image from the Base64 encoded string
+        final byte[] imageBytes = Base64.decodeBase64(myItems.get(index).base64Image);
+        final InputStream in = new ByteArrayInputStream(imageBytes);
+        final BufferedImage bImageFromConvert = ImageIO.read(in);
+        myImageLabel.setText("");
+        myImageLabel.setIcon(new ImageIcon(bImageFromConvert));
     }
 
 

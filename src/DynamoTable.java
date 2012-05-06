@@ -197,7 +197,7 @@ public abstract class DynamoTable {
      * @param state
      */
     private void waitWhileTableIs(final String state) {
-        System.out.println("\nWaiting while \"" + myTableName + "\" is in state " + state + "...");
+        System.out.println("\nWaiting while \"" + myTableName + "\" is in state " + state + " ...");
 
         final long startTime = System.currentTimeMillis();
         final long endTime = startTime + (10 * 60 * 1000);
@@ -217,9 +217,9 @@ public abstract class DynamoTable {
             } catch (final AmazonServiceException ase) {
                 if (ase.getErrorCode().equals("ResourceNotFoundException")) {
                     //:MAINTENANCE
-                    //  If we catch this Exception then the table we are querying
-                    //  no longer exists.  This is what we want when we are waiting
-                    //  for a table in the DELETING state
+                    //   If we catch this Exception then the table we are querying
+                    //   no longer exists.  This is what we want when we are waiting
+                    //   for a table in the DELETING state
                     return;
                 }
                 else {
