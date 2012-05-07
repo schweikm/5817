@@ -1,6 +1,0 @@
-Title:  Toy Story 3
-Rating:  G
-Year:  2010
-Runtime (min):  103
-Director:  Lee Unkrich
-IMDB Rating:  8.5
