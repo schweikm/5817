@@ -21,7 +21,7 @@ public class MediaTableData implements Comparable<MediaTableData> {
                    final int    in_year,
                    final int    in_runtime,
                    final String in_director,
-                   final int in_imdbRating,
+                   final String in_base64ImdbRating,
                    final String in_base64Image) {
 
         title = in_title;
@@ -29,7 +29,7 @@ public class MediaTableData implements Comparable<MediaTableData> {
         year = in_year;
         runtime = in_runtime;
         director = in_director;
-        imdbRating = in_imdbRating;
+        base64ImdbRating = in_base64ImdbRating;
         base64Image = in_base64Image;
     }
 
@@ -47,6 +47,6 @@ public class MediaTableData implements Comparable<MediaTableData> {
     public int    year;
     public int    runtime;
     public String director;
-    public int    imdbRating;
+    public String base64ImdbRating;
     public String base64Image;
 }

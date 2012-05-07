@@ -300,9 +300,9 @@ public class MediaManager implements ActionListener {
 
                         // get the data from the Dynamo table
                         final List<MediaTableData> items =
-                          MediaTable.getInstance().scanTable(MediaTable.imdbRatingAttribute,
+                          MediaTable.getInstance().scanTable(MediaTable.titleAttribute_PK,
                                                              ComparisonOperator.NE.toString(),
-                                                             0);
+                                                             "lol");
 
                         // then add them to the GUI
                         MediaPanel.getInstance().addItems(items);
@@ -388,7 +388,7 @@ public class MediaManager implements ActionListener {
                 final String director = reader.readLine().substring(11);
 
                 final String imdbRatingStr = reader.readLine().substring(14);
-                final int    imdbRating = Integer.parseInt(imdbRatingStr);
+                final String base64ImdbRating = encodeDouble(Double.parseDouble(imdbRatingStr));
 
                 final String base64Image = encodeImage("data/" + child + "/image.jpg");
 
@@ -397,7 +397,7 @@ public class MediaManager implements ActionListener {
                                                                year,
                                                                runtime,
                                                                director,
-                                                               imdbRating,
+                                                               base64ImdbRating,
                                                                base64Image);
 
                 returnList.add(info);
@@ -435,31 +435,15 @@ public class MediaManager implements ActionListener {
     }
 
 
-    @SuppressWarnings("unused")
     /**
      * 
-     * @param data
+     * @param val
+     * @return
      */
-    private void printDataItem(final List<MediaTableData> data) {
-        if(null == data) {
-            System.out.println("No data to print!");
-            return;
-        }
-
-        for(int i = 0; i < data.size(); i++) {
-            final MediaTableData datum = data.get(i);
-
-            System.out.println("\nItem " + (i + 1) + " of " + data.size());
-            System.out.println("---------------------------------------------\n" +
-                               "    Title        :  " + datum.title       + "\n" +
-                               "    MPAA Rating  :  " + datum.mpaaRating  + "\n" +
-                               "    Year         :  " + datum.year        + "\n" +
-                               "    Runtime (min):  " + datum.runtime     + "\n" +
-                               "    Director     :  " + datum.director    + "\n" +
-                               "    IMDB Rating  :  " + datum.imdbRating  + "\n" +
-                               "    Base64 Image :  " + datum.base64Image + "\n" +
-                               "---------------------------------------------\n");
-        }
+    private String encodeDouble(final Double val) {
+        final String strVal = new String(val.toString());
+        final byte[] encoded = Base64.encodeBase64(strVal.getBytes());
+        return new String(encoded);
     }
 
 

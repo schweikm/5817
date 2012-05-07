@@ -20,13 +20,13 @@ public class MediaTable extends DynamoTable {
 
 
     // table attributes
-    public static final String titleAttribute_PK    = "title";
-    public static final String mpaaRatingAttribute  = "mpaaRating";
-    public static final String yearAttribute        = "year";
-    public static final String runtimeAttribute     = "runtime";
-    public static final String directorAttribute    = "director";
-    public static final String imdbRatingAttribute  = "imdbRating";
-    public static final String base64ImageAttribute = "base64Image";
+    public static final String titleAttribute_PK          = "title";
+    public static final String mpaaRatingAttribute        = "mpaaRating";
+    public static final String yearAttribute              = "year";
+    public static final String runtimeAttribute           = "runtime";
+    public static final String directorAttribute          = "director";
+    public static final String base64ImdbRatingAttribute  = "imdbRating";
+    public static final String base64ImageAttribute       = "base64Image";
 
 
     //////////////////////
@@ -83,16 +83,16 @@ public class MediaTable extends DynamoTable {
           new ArrayList<MediaTableData>();
 
         for(int i = 0; i < itemList.size(); i++) {
-            final String title       = itemList.get(i).get(titleAttribute_PK).getS();
-            final String mpaaRating  = itemList.get(i).get(mpaaRatingAttribute).getS();
-            final int    year        = Integer.parseInt(itemList.get(i).get(yearAttribute).getN());
-            final int    runtime     = Integer.parseInt(itemList.get(i).get(runtimeAttribute).getN());
-            final String director    = itemList.get(i).get(directorAttribute).getS();
-            final int    imdbRating  = Integer.parseInt(itemList.get(i).get(imdbRatingAttribute).getN());
-            final String base64Image = itemList.get(i).get(base64ImageAttribute).getS();
+            final String title            = itemList.get(i).get(titleAttribute_PK).getS();
+            final String mpaaRating       = itemList.get(i).get(mpaaRatingAttribute).getS();
+            final int    year             = Integer.parseInt(itemList.get(i).get(yearAttribute).getN());
+            final int    runtime          = Integer.parseInt(itemList.get(i).get(runtimeAttribute).getN());
+            final String director         = itemList.get(i).get(directorAttribute).getS();
+            final String base64ImdbRating = itemList.get(i).get(base64ImdbRatingAttribute).getS();
+            final String base64Image      = itemList.get(i).get(base64ImageAttribute).getS();
 
             returnList.add(new MediaTableData(title, mpaaRating, year, runtime,
-                                              director, imdbRating, base64Image));
+                                              director, base64ImdbRating, base64Image));
         }
 
         Collections.sort(returnList);
@@ -130,13 +130,13 @@ public class MediaTable extends DynamoTable {
     private Map<String, AttributeValue> newItem(final MediaTableData data) {
         final Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
 
-        item.put(titleAttribute_PK,    new AttributeValue(data.title));
-        item.put(mpaaRatingAttribute,  new AttributeValue(data.mpaaRating));
-        item.put(yearAttribute,        new AttributeValue().withN(Integer.toString(data.year)));
-        item.put(runtimeAttribute,     new AttributeValue().withN(Integer.toString(data.runtime)));
-        item.put(directorAttribute,    new AttributeValue(data.director));
-        item.put(imdbRatingAttribute,  new AttributeValue().withN(Integer.toString(data.imdbRating)));
-        item.put(base64ImageAttribute, new AttributeValue(data.base64Image));
+        item.put(titleAttribute_PK,         new AttributeValue(data.title));
+        item.put(mpaaRatingAttribute,       new AttributeValue(data.mpaaRating));
+        item.put(yearAttribute,             new AttributeValue().withN(Integer.toString(data.year)));
+        item.put(runtimeAttribute,          new AttributeValue().withN(Integer.toString(data.runtime)));
+        item.put(directorAttribute,         new AttributeValue(data.director));
+        item.put(base64ImdbRatingAttribute, new AttributeValue(data.base64ImdbRating));
+        item.put(base64ImageAttribute,      new AttributeValue(data.base64Image));
 
         return item;
     }

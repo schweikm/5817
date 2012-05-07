@@ -1,5 +1,6 @@
 import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.awt.Image;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -249,16 +250,35 @@ public class MediaPanel extends JPanel implements ActionListener {
         myRuntimeTextField.setText(((Integer)myItems.get(index).runtime).toString());
         myDirectorTextField.setText(myItems.get(index).director);
 
-        final int intRating = myItems.get(index).imdbRating;
-        final double doubleRating = (double)intRating / 10.0;
-        myImdbRatingTextField.setText(((Double)doubleRating).toString());
+        // reconstruct the double from the Base64 encoded string
+        final Double imdbRating = decodeDouble(myItems.get(index).base64ImdbRating);
+        myImdbRatingTextField.setText(imdbRating.toString());
 
         // reconstruct the image from the Base64 encoded string
-        final byte[] imageBytes = Base64.decodeBase64(myItems.get(index).base64Image);
+        final Image poster = decodeImage(myItems.get(index).base64Image);
+        myImageLabel.setText("");
+        myImageLabel.setIcon(new ImageIcon(poster));
+    }
+
+
+    /**
+     * 
+     * @param strVal
+     * @return
+     */
+    private Double decodeDouble(final String encodedString) {
+        final byte[] imdbBytes = Base64.decodeBase64(encodedString);
+        final String imdbStr = new String(imdbBytes);
+        return Double.parseDouble(imdbStr);
+    }
+
+
+    private Image decodeImage(final String encodedString) 
+      throws IOException {
+        final byte[] imageBytes = Base64.decodeBase64(encodedString);
         final InputStream in = new ByteArrayInputStream(imageBytes);
         final BufferedImage bImageFromConvert = ImageIO.read(in);
-        myImageLabel.setText("");
-        myImageLabel.setIcon(new ImageIcon(bImageFromConvert));
+        return bImageFromConvert;
     }
 
 
