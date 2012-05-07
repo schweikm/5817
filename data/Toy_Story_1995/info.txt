@@ -1,0 +1,6 @@
+Title:  Toy Story
+Rating:  G
+Year:  1995
+Runtime (min):  77
+Director:  John Lasseter
+IMDB Rating:  8.2
